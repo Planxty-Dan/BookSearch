@@ -2,7 +2,7 @@
 <resources>
 
     <string name="app_name">OMG Android</string>
-    <string name="hello_world">I am a tiny phone for chipmunks!</string>
+    <string name="textview">I am a tiny phone for chipmunks!</string>
     <string name="action_settings">Settings</string>
 
 </resources>
