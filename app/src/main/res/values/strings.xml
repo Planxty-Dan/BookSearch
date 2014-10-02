@@ -4,5 +4,6 @@
     <string name="app_name">OMG Android</string>
     <string name="textview">I am a tiny phone for chipmunks!</string>
     <string name="action_settings">Settings</string>
+    <string name="button">Update The Text</string>
 
 </resources>
