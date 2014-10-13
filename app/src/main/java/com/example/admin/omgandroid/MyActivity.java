@@ -130,12 +130,14 @@ public class MyActivity extends Activity implements View.OnClickListener, Adapte
     public void onItemClick(AdapterView parent, View view, int position, long id) {
         JSONObject jsonObject = (JSONObject) mJSONAdapter.getItem(position);
         String coverID = jsonObject.optString("cover_i", "");
+        String bookTitle = jsonObject.optString("title", "");
+        String bookAuthor = jsonObject.optString("author_name", "");
 
         Intent detailIntent = new Intent(this, DetailActivity.class);
 
         detailIntent.putExtra("coverID", coverID);
-
-        //add methods here for any other info to be passed and displayed on the book
+        detailIntent.putExtra("selectedTitle", bookTitle);
+        detailIntent.putExtra("selectedAuthor", bookAuthor);
 
         startActivity(detailIntent);
     }
