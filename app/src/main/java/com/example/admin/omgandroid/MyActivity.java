@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -19,6 +20,13 @@ import android.widget.ShareActionProvider;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.JsonHttpResponseHandler;
+
+import org.json.JSONObject;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 
 
@@ -28,29 +36,66 @@ public class MyActivity extends Activity implements View.OnClickListener, Adapte
     Button mainButton;
     EditText mainEditText;
     ListView mainListView;
-    ArrayAdapter mArrayAdapter;
+    JSONAdapter mJSONAdapter;
     ArrayList mNameList = new ArrayList();
     ShareActionProvider mShareActionProvider;
     private static final String PREFS = "prefs";
     private static final String PREF_NAME = "name";
     SharedPreferences mSharedPreferences;
 
+    private static final String QUERY_URL = "http://openlibrary.org/search.json?q=";
+
+    private void queryBooks(String searchString) {
+
+        String urlString = "";
+        try {
+            urlString = URLEncoder.encode(searchString, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+
+            e.printStackTrace();
+            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
+
+        AsyncHttpClient client = new AsyncHttpClient();
+
+        setProgressBarIndeterminateVisibility(true);
+        client.get(QUERY_URL + urlString,
+                new JsonHttpResponseHandler() {
+
+                    @Override
+                    public void onSuccess(JSONObject jsonObject) {
+                        setProgressBarIndeterminateVisibility(false);
+                        Toast.makeText(getApplicationContext(), "Success!", Toast.LENGTH_LONG).show();
+
+                        mJSONAdapter.updateData(jsonObject.optJSONArray("docs"));
+                    }
+
+                    @Override
+                    public void onFailure(int statusCode, Throwable throwable, JSONObject error) {
+                        setProgressBarIndeterminateVisibility(false);
+                        Toast.makeText(getApplicationContext(), "Error: " + statusCode + " " + throwable.getMessage(), Toast.LENGTH_LONG).show();
+
+                        Log.e("omg android", statusCode + " " + throwable.getMessage());
+                    }
+                });
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
+        setProgressBarIndeterminateVisibility(false);
         setContentView(R.layout.activity_my);
         mainTextView = (TextView) findViewById(R.id.main_textview);
-        mainTextView.setText("Set in Java");
         mainButton = (Button) findViewById(R.id.main_button);
         mainButton.setOnClickListener(this);
         mainEditText = (EditText) findViewById(R.id.main_edittext);
         mainListView = (ListView) findViewById(R.id.main_listview);
-        mArrayAdapter = new ArrayAdapter(this,
-                android.R.layout.simple_list_item_1,
-                mNameList);
-        mainListView.setAdapter(mArrayAdapter);
         mainListView.setOnItemClickListener(this);
         displayWelcome();
+        mJSONAdapter = new JSONAdapter(this, getLayoutInflater());
+        mainListView.setAdapter(mJSONAdapter);
     }
 
 
@@ -78,16 +123,21 @@ public class MyActivity extends Activity implements View.OnClickListener, Adapte
 
     @Override
     public void onClick(View view) {
-        mainTextView.setText(mainEditText.getText().toString()
-                + " is learning Android development!");
-        mNameList.add(mainEditText.getText().toString());
-        mArrayAdapter.notifyDataSetChanged();
-        setShareIntent();
+        queryBooks(mainEditText.getText().toString());
     }
 
     @Override
     public void onItemClick(AdapterView parent, View view, int position, long id) {
-        Log.d("omg android", position + ": " + mNameList.get(position));
+        JSONObject jsonObject = (JSONObject) mJSONAdapter.getItem(position);
+        String coverID = jsonObject.optString("cover_i", "");
+
+        Intent detailIntent = new Intent(this, DetailActivity.class);
+
+        detailIntent.putExtra("coverID", coverID);
+
+        //add methods here for any other info to be passed and displayed on the book
+
+        startActivity(detailIntent);
     }
 
     public void displayWelcome() {
